@@ -22,6 +22,8 @@ Now, we should receive our refresh token in order to request the access token fu
 
 `SpotifyControl 0` Set volume to 0
 
+`SpotifyControl 100` Set volume to 100
+
 You can change the percent which the volume increases/decreases by via changing ***VOLUME_BY*** value (by default is 10 percent)
 
 ♧ Don't forget to *rebuild* the application to save changes
