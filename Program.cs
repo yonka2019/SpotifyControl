@@ -28,18 +28,20 @@ namespace SpotifyControl
          *  + : increase volume 
          *  - : decrease volume
          *  0 : zero volume
+         *  100 : full volume
          */
 
         public static async Task Main(string[] args)
         {
-            if ((args.Length != 1) || ((args[0] != "-") && (args[0] != "+") && (args[0] != "0") && (args[0] != "r")))
+            if ((args.Length != 1) || ((args[0] != "-") && (args[0] != "+") && (args[0] != "0") && (args[0] != "100") && (args[0] != "r")))
             {
                 Console.WriteLine("[ERROR] Bad arguments\n" +
                     "* Only one argument allowed: [r / + / - / 0]\n" +
                     "*  'SpotifyControl r' : update the refresh token\n" +
                     "*  'SpotifyControl +' : increase volume\n" +
                     "*  'SpotifyControl -' : decrease volume\n" +
-                    "*  'SpotifyControl 0' : zero volume");
+                    "*  'SpotifyControl 0' : zero volume\n" +
+                    "*  'SpotifyControl 100' : full volume");
                 return;
             }
 
@@ -64,7 +66,7 @@ namespace SpotifyControl
                 Console.WriteLine("[SUCCESS] Received the refresh token successfully");
                 return;
             }
-            else if (((args[0] == "-") || (args[0] == "+") || (args[0] == "0")) && (REFRESH_TOKEN != null))
+            else if (((args[0] == "-") || (args[0] == "+") || (args[0] == "0") || (args[0] == "100")) && (REFRESH_TOKEN != null))
             {
                 string accessToken;
 
@@ -119,6 +121,16 @@ namespace SpotifyControl
                             PlayerVolumeRequest volumeInfo = new(newVolume);
                             await spotify.Player.SetVolume(volumeInfo);
                             Console.WriteLine("[SUCCESS] 0 Volume");
+                        }
+                        break;
+
+                    case "100":
+                        {
+                            int newVolume = 100;
+
+                            PlayerVolumeRequest volumeInfo = new(newVolume);
+                            await spotify.Player.SetVolume(volumeInfo);
+                            Console.WriteLine("[SUCCESS] 100 Volume");
                         }
                         break;
                 }
