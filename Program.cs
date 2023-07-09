@@ -32,60 +32,96 @@ namespace SpotifyControl
 
         public static async Task Main(string[] args)
         {
-            if (args.Length != 1)
+            if ((args.Length != 1) || ((args[0] != "-") && (args[0] != "+") && (args[0] != "0") && (args[0] != "r")))
+            {
+                Console.WriteLine("[ERROR] Bad arguments\n" +
+                    "* Only one argument allowed: [r / + / - / 0]\n" +
+                    "*  'SpotifyControl r' : update the refresh token\n" +
+                    "*  'SpotifyControl +' : increase volume\n" +
+                    "*  'SpotifyControl -' : decrease volume\n" +
+                    "*  'SpotifyControl 0' : zero volume");
                 return;
+            }
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             if (args[0] == "r")
             {
-                string REFRESH_TOKEN = await GetRefreshToken();
+                try
+                {
+                    await UpdateRefreshToken();
+                    await refresh_token_received.Task;  // wait until refresh token received
+                }
+                catch
+                {
+                    Console.WriteLine("[ERROR] Can't get the refresh token (maybe any client id/secret issue?)");
+                    return;
+                }
+
                 config.AppSettings.Settings["REFRESH_TOKEN"].Value = REFRESH_TOKEN;
                 config.Save();
 
-                await refresh_token_received.Task;
+                Console.WriteLine("[SUCCESS] Received the refresh token successfully");
                 return;
             }
-
-            string ACCESS_TOKEN = await GetAccessToken(REFRESH_TOKEN);
-            spotify = new SpotifyClient(ACCESS_TOKEN);
-
-            int currentVolume = await GetVolume();
-            if (currentVolume == -1)  // no device is active currently
-                return;
-
-            switch (args[0])
+            else if (((args[0] == "-") || (args[0] == "+") || (args[0] == "0")) && (REFRESH_TOKEN != null))
             {
-                case "+":
-                    {
-                        int newVolume = currentVolume + VOLUME_BY;
-                        if (newVolume > 100)
-                            newVolume = 100;
+                string accessToken;
 
-                        PlayerVolumeRequest volumeInfo = new(newVolume);
-                        await spotify.Player.SetVolume(volumeInfo);
-                    }
-                    break;
+                try
+                {
+                    accessToken = await GetAccessToken(REFRESH_TOKEN);
+                }
+                catch  // can't get the refresh token
+                {
+                    Console.WriteLine("[ERROR] Can't get the access token (issue with refresh token, refresh it via 'r' argument)");
+                    return;
+                }
+                spotify = new SpotifyClient(accessToken);
 
-                case "-":
-                    {
-                        int newVolume = currentVolume - VOLUME_BY;
-                        if (newVolume < 0)
-                            newVolume = 0;
+                int currentVolume = await GetVolume();
+                if (currentVolume == -1)
+                {
+                    Console.WriteLine("[ERROR] No device is active currently (does any song play?)");
+                    return;
+                }
 
-                        PlayerVolumeRequest volumeInfo = new(newVolume);
-                        await spotify.Player.SetVolume(volumeInfo);
-                    }
-                    break;
+                switch (args[0])
+                {
+                    case "+":
+                        {
+                            int newVolume = currentVolume + VOLUME_BY;
+                            if (newVolume > 100)
+                                newVolume = 100;
 
-                case "0":
-                    {
-                        int newVolume = 0;
+                            PlayerVolumeRequest volumeInfo = new(newVolume);
+                            await spotify.Player.SetVolume(volumeInfo);
+                            Console.WriteLine("[SUCCESS] + Volume");
+                        }
+                        break;
 
-                        PlayerVolumeRequest volumeInfo = new(newVolume);
-                        await spotify.Player.SetVolume(volumeInfo);
-                    }
-                    break;
+                    case "-":
+                        {
+                            int newVolume = currentVolume - VOLUME_BY;
+                            if (newVolume < 0)
+                                newVolume = 0;
+
+                            PlayerVolumeRequest volumeInfo = new(newVolume);
+                            await spotify.Player.SetVolume(volumeInfo);
+                            Console.WriteLine("[SUCCESS] - Volume");
+                        }
+                        break;
+
+                    case "0":
+                        {
+                            int newVolume = 0;
+
+                            PlayerVolumeRequest volumeInfo = new(newVolume);
+                            await spotify.Player.SetVolume(volumeInfo);
+                            Console.WriteLine("[SUCCESS] 0 Volume");
+                        }
+                        break;
+                }
             }
         }
 
@@ -95,12 +131,11 @@ namespace SpotifyControl
             return newResponse.AccessToken;
         }
 
-        private static async Task<string> GetRefreshToken()
+        // Updates REFRESH_TOKEN field
+        private static async Task UpdateRefreshToken()
         {
             await LoginSpotify();
-            refresh_token_received = new TaskCompletionSource<bool>();
-
-            return REFRESH_TOKEN;
+            refresh_token_received = new TaskCompletionSource<bool>();  // automatically task set to false (not already done) in order to make main thread to wait until refresh token will be received
         }
 
         private static async Task LoginSpotify()
@@ -139,7 +174,7 @@ namespace SpotifyControl
             SpotifyClientConfig config = SpotifyClientConfig.CreateDefault();
             AuthorizationCodeTokenResponse tokenResponse = await new OAuthClient(config).RequestToken(
               new AuthorizationCodeTokenRequest(
-                CLIENT_ID, CLIENT_SECRET, response.Code, new Uri("http://localhost:5543/callback")
+                CLIENT_ID, CLIENT_SECRET, response.Code, new Uri($"http://localhost:{CALLBACK_PORT}/callback")
               )
             );
 
