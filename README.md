@@ -1,5 +1,5 @@
 # SpotifyControl
-Allows easily control spotify volume
+Allows easily control spotify volume via script
 
 ## Getting Started
 ### • CLIENT ID & CLIENT SECRET
