@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SpotifyControl": {
+      "commandName": "Project",
+      "commandLineArgs": "r"
+    }
+  }
+}

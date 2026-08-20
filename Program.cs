@@ -12,7 +12,7 @@ namespace SpotifyControl
         private static EmbedIOAuthServer _server;
         private static SpotifyClient spotify;
 
-        private const int CALLBACK_PORT = 5543;
+        private const int CALLBACK_PORT = 6969;
         private static TaskCompletionSource<bool> refresh_token_received;
 
         private const int VOLUME_BY = 10;  // percent
@@ -174,7 +174,7 @@ namespace SpotifyControl
 
         private static async Task LoginSpotify()
         {
-            _server = new EmbedIOAuthServer(new Uri($"http://localhost:{CALLBACK_PORT}/callback"), CALLBACK_PORT);
+            _server = new EmbedIOAuthServer(new Uri($"http://127.0.0.1:{CALLBACK_PORT}/callback"), CALLBACK_PORT);
             await _server.Start();
 
             _server.AuthorizationCodeReceived += OnAuthorizationCodeReceived;
@@ -208,7 +208,7 @@ namespace SpotifyControl
             SpotifyClientConfig config = SpotifyClientConfig.CreateDefault();
             AuthorizationCodeTokenResponse tokenResponse = await new OAuthClient(config).RequestToken(
               new AuthorizationCodeTokenRequest(
-                CLIENT_ID, CLIENT_SECRET, response.Code, new Uri($"http://localhost:{CALLBACK_PORT}/callback")
+                CLIENT_ID, CLIENT_SECRET, response.Code, new Uri($"http://127.0.0.1:{CALLBACK_PORT}/callback")
               )
             );
 
